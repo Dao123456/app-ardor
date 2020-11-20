@@ -9,15 +9,9 @@ typedef struct {
     uint8_t numDecimalsBeforePoint;
 } chainType;
 
-typedef struct {
-    char * name;
-} appendageType;
-
 extern const chainType CHAINS[];
 extern const uint8_t NUM_CHAINS;
 extern const uint8_t SUPPORTED_TXN_VERSION;
-extern const appendageType APPENDAGE_TYPES[];
-extern const uint8_t NUM_APPENDAGE_TYPES;
 
 extern const uint8_t ARDOR_SPECIAL_IDENTIFIER[];
 extern const uint8_t ARDOR_SPECIAL_IDENTIFIER_LEN;

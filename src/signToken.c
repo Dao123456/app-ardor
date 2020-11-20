@@ -49,116 +49,13 @@
 
         P1_SIGN:
             dataBuffer: timestamp (4 bytes) | derivaiton path (uint32) * some length |
-            returns:    1 byte status | token 100 bytes
-
-    100-byte token consists of a 32-byte public key, a 4-byte timestamp, and a 64-byte signature
+            returns:    1 byte status | sharedkey 32 bytes
 */
+
 
 //does what it says :)
 void cleanTokenCreationState() {
     state.tokenCreation.mode = STATE_INVAILD;
-}
-
-// UI callbacks
-unsigned int txn_authorized(const bagl_element_t *e) {
-    UNUSED(e);
-    
-    uint8_t *dataBuffer = G_io_apdu_buffer + OFFSET_CDATA;
-    uint8_t dataLength = G_io_apdu_buffer[OFFSET_LC];
-    uint8_t derivationPathLengthInUints32 = (dataLength - 4) / sizeof(uint32_t);
-    uint8_t tx = 0;
-    uint16_t exception = 0;
-    uint32_t timestamp = 0;
-    uint8_t keySeed[32]; os_memset(keySeed, 0, sizeof(keySeed));
-
-    //gotta do some space reuse
-    uint8_t publicKeyAndFinalHash[32]; os_memset(publicKeyAndFinalHash, 0, sizeof(publicKeyAndFinalHash));
-    uint8_t ret = ardorKeys(dataBuffer + sizeof(timestamp), derivationPathLengthInUints32, keySeed, publicKeyAndFinalHash, 0, 0, &exception);
-
-    if (R_SUCCESS != ret) {
-        cleanTokenCreationState();
-
-        G_io_apdu_buffer[tx++] = ret;
-
-        if (R_KEY_DERIVATION_EX == ret) {
-            G_io_apdu_buffer[tx++] = exception >> 8;
-            G_io_apdu_buffer[tx++] = exception & 0xFF;
-        }
-    } else {
-        os_memcpy(&timestamp, dataBuffer, sizeof(timestamp));
-
-        G_io_apdu_buffer[tx++] = R_SUCCESS;
-
-        cx_hash(&state.tokenCreation.sha256.header, 0, publicKeyAndFinalHash, sizeof(publicKeyAndFinalHash), 0, 0); //adding the public key to the hash
-        
-        //also make a copy to the output buffer, because of how a token is constructed
-        os_memcpy(G_io_apdu_buffer + tx, publicKeyAndFinalHash, sizeof(publicKeyAndFinalHash));
-        tx += sizeof(publicKeyAndFinalHash);
-
-        cx_hash(&state.tokenCreation.sha256.header, 0, (uint8_t*)&timestamp, sizeof(timestamp), 0, 0); //adding the timestamp to the hash
-
-        os_memcpy(G_io_apdu_buffer + tx, &timestamp, sizeof(timestamp));
-        tx += sizeof(timestamp);
-
-        cx_hash(&state.tokenCreation.sha256.header, CX_LAST, 0, 0, publicKeyAndFinalHash, sizeof(publicKeyAndFinalHash));
-
-        signMsg(keySeed, publicKeyAndFinalHash, G_io_apdu_buffer + tx); //is a void function, no ret value to check against
-        os_memset(keySeed, 0, sizeof(keySeed));
-
-        tx += 64;
-
-        G_io_apdu_buffer[tx++] = 0x90;
-        G_io_apdu_buffer[tx++] = 0x00;
-    }
-
-    cleanTokenCreationState();
-
-    io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, tx);
-    
-    ui_idle();  // redraw ui
-    return 0; // DO NOT REDRAW THE BUTTON
-}
-
-unsigned int txn_cancelled(const bagl_element_t *e) {
-    UNUSED(e);
-    
-    cleanTokenCreationState();
-
-    G_io_apdu_buffer[0] = R_SUCCESS;
-    G_io_apdu_buffer[1] = R_REJECT;
-    G_io_apdu_buffer[2] = 0x90;
-    G_io_apdu_buffer[3] = 0x00;
-    io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, 4);
-    
-    ui_idle();  // redraw ui
-    return 0; // DO NOT REDRAW THE BUTTON
-}
-
-// UI definitions
-UX_STEP_CB(stFlowPage1,
-           pb,
-           txn_authorized(NULL),
-           {
-               &C_icon_validate_14,
-               "Sign token",
-           });
-
-UX_STEP_CB(stFlowPage2,
-           pb,
-           txn_cancelled(NULL),
-           {
-               &C_icon_crossmark,
-               "Reject",
-           });
-UX_FLOW(stFlow,
-        &stFlowPage1,
-        &stFlowPage2);
-
-void showSignTokenScreen() {
-    if(0 == G_ux.stack_count)
-        ux_stack_push();
-
-    ux_flow_init(0, stFlow, NULL);
 }
 
 //Since this is a callback function, and this handler manages state, it's this function's reposibility to clear the state
@@ -225,8 +122,51 @@ void signTokenMessageHandlerHelper(const uint8_t p1, const uint8_t p2, const uin
                 break;
             }
 
-            showSignTokenScreen();
-            *flags |= IO_ASYNCH_REPLY;
+            uint16_t exception = 0;
+            uint32_t timestamp = 0;
+            uint8_t keySeed[32]; os_memset(keySeed, 0, sizeof(keySeed));
+
+            //gotta do some space reuse
+            uint8_t publicKeyAndFinalHash[32]; os_memset(publicKeyAndFinalHash, 0, sizeof(publicKeyAndFinalHash));
+            uint8_t ret = ardorKeys(dataBuffer + sizeof(timestamp), derivationPathLengthInUints32, keySeed, publicKeyAndFinalHash, 0, 0, &exception); //derivationParamLengthInBytes should devied by 4, it's checked above
+
+            if (R_SUCCESS != ret) {
+                cleanTokenCreationState();
+
+                G_io_apdu_buffer[(*tx)++] = ret;
+
+                if (R_KEY_DERIVATION_EX == ret) {
+                    G_io_apdu_buffer[(*tx)++] = exception >> 8;
+                    G_io_apdu_buffer[(*tx)++] = exception & 0xFF;
+                }
+
+                break;
+            }
+
+            
+            os_memcpy(&timestamp, dataBuffer, sizeof(timestamp));
+
+            G_io_apdu_buffer[(*tx)++] = R_SUCCESS;
+
+            cx_hash(&state.tokenCreation.sha256.header, 0, publicKeyAndFinalHash, sizeof(publicKeyAndFinalHash), 0, 0); //adding the public key to the hash
+            
+            //also make a copy to the output buffer, because of how a token is constructed
+            os_memcpy(G_io_apdu_buffer + *tx, publicKeyAndFinalHash, sizeof(publicKeyAndFinalHash));
+            *tx += sizeof(publicKeyAndFinalHash);
+
+            cx_hash(&state.tokenCreation.sha256.header, 0, (uint8_t*)&timestamp, sizeof(timestamp), 0, 0); //adding the timestamp to the hash
+
+            os_memcpy(G_io_apdu_buffer + *tx, &timestamp, sizeof(timestamp));
+            *tx += sizeof(timestamp);
+
+            cx_hash(&state.tokenCreation.sha256.header, CX_LAST, 0, 0, publicKeyAndFinalHash, sizeof(publicKeyAndFinalHash));
+
+            signMsg(keySeed, publicKeyAndFinalHash, G_io_apdu_buffer + *tx); //is a void function, no ret value to check against
+            os_memset(keySeed, 0, sizeof(keySeed));
+
+            *tx += 64;
+
+            cleanTokenCreationState();
 
             break;
        
@@ -244,8 +184,6 @@ void signTokenMessageHandler(const uint8_t p1, const uint8_t p2, const uint8_t *
 
     signTokenMessageHandlerHelper(p1, p2, dataBuffer, dataLength, flags, tx, isLastCommandDifferent);
     
-    if (0 == ((*flags) & IO_ASYNCH_REPLY)) {
-        G_io_apdu_buffer[(*tx)++] = 0x90;
-        G_io_apdu_buffer[(*tx)++] = 0x00;
-    }
+    G_io_apdu_buffer[(*tx)++] = 0x90;
+    G_io_apdu_buffer[(*tx)++] = 0x00;
 }

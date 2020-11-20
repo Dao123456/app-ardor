@@ -8,20 +8,6 @@ This is the official [Ardor](https://www.jelurida.com/ardor) ledger wallet app f
 
 ## Developer Resources 
 
-### Compiling using the Jelurida docker image for ledger compilation
-
-The image was made to make it easy to compile the project on any platform you might be running, if you don't have access to this image, don't worry you can still setup up your own dev env and compile.
-
-To compile using the image
-1. Virtualy map your project folder using `-v "PROJECT_FOLDER_HERE:/app"` into /app when you create your personal image
-2. `cd /app` - this should be your project folder
-3. `pyenv activate ledger` - to activate the right version of python
-4. `make clean BOLOS_SDK=/root/nanox-secure-sdk-1.6`
-5. `make BOLOS_SDK=/root/nanox-secure-sdk-1.6`
-6. `make load BOLOS_SDK=/root/nanox-secure-sdk-1.6` this shouldn't work, since the ledger usb isn't mounted into the docker, but it will produce a python command for loading the image on your own machine, copy paste this command on your own machine to load the newly compiled app onto the ledger device
-
-* Switch between /root/nanox-secure-sdk-1.6 and /root/nanos-secure-sdk-1.6 if you want to compile for a different device
-
 ### Enable Log Messages
 
 To turn on logging on the Ledger app
@@ -33,9 +19,7 @@ To turn on logging on the Ledger app
 
 In order to build the Nano S or Nano X version you just need to make sure the `BOLOS_SDK` environment variable points to the corresponding SDK.
 
-Make sure you rebuild the whole project when switching SDKs by executing `make clean` and then `make load`.
-
-Since we are switching a lot between SDK's, it would be a good practice to specify BOLOS_SDK when compiling, so the compile command would me `make BOLOS_SDK=PATH_TO_SOME_SDK`
+Make sure you rebuild the whole project by executing `make clean` and then `make load`.
 
 ### Avoid Numeric Underflow
 
@@ -65,9 +49,9 @@ In addition state must be cleared whenever we get an error in a handler function
 
 ### More Code Design
 
-Do not include project header files inside other project header files to prevent complicating the dependencies.
+Do not include statement for C source code inside other C source code to prevent complicating the dependencies.
 
-Store constants and hardcoded values in config.h and config.c
+Store constants and hardcoded values in config.h
 
 ### Transaction Types
 
@@ -80,7 +64,8 @@ Changes to the `txtypes.txt` should be picked up by the make process and a new `
 ### Code Flow
 
 The code flow starts at ardor_main (`main.c`) which uses a global try/catch to prevent the app from crashing on error. 
-The code loops on io_exchange waiting for the next command buffer, then calling the appropriate handler function implemented in the different .c files.
+The code loops on io_exchange waiting for the next command buffer, then calling the appropriate handler function 
+implemented in the different .c files.
 
 ## APDU Protocol
 
@@ -131,9 +116,8 @@ All return values for functions should be checked in every function.
 
 Ardor signatures are based on the EC-KCDSA over Curve25519 algorithm which is not supported natively by Ledger.
 
-To support standard BIP32 key derivation we implemented curve conversion for Ardor using the protocol [Yaffe-Bender HD key derivation for EC-KCDSA](https://www.jelurida.com/sites/default/files/kcdsa.pdf), it's a derivation scheme that rides on top of the BIP32-Ed25519 HD key derivation scheme.
-
-
+To support standard BIP32 key derivation we implemented curve conversion for Ardor using the protocol 
+[Yaffe-Bender HD key derivation for EC-KCDSA](https://www.jelurida.com/sites/default/files/kcdsa.pdf)
 
 Technically a public key is a Point (X,Y) on a curve C. X,Y are integers modulo some field F with a base point on the curve G.
 The tuple (C, F, G) defines a "curve", in this paper we are dealing with the twisted edwards curve (ed25519) and curve25519.
@@ -151,21 +135,17 @@ The derivation composition flow for path P is:
 1. os_perso_derive_node_bip32 derives KLKR and chaincode for P using SLIP10 initialization on 512 bits master seed from bip39/bip32 24 words
 2. Derive PublicKeyED25519 using cx_eddsa_get_public_key and KL, the point is encoded as 65 bytes 0x04 XBigEndian YBigEndian
 3. PubleyKeyED25519YLE = convert(YBigEndian) - just reverse the bytes
-4. PublicKeyCurve25519X = morph(PublicKeyEED25519YLE)
+4. PublicKeyCurve25519X = morph(PubleyKeyEED25519YLE)
 
 Points on Curve25519 can be defined by the X coordinate (since each X coordinate has only one matching Y coordinate) 
-so PublicKeyCurve25519X and KL should hold PublicKeyCurve25519X = KL * Curve25519BasePoint = Morphe(KL * ED25519BasePoint)
+so PublicKeyCurve25519X and KL should hold PublicKeyCurve25519X = KL * Curve25519BasePoint
 
 In EC-KCDSA publickey = privatekey^-1 * BasePoint, privateKey^-1 is referred to as the key seed, so KL is the key seed for the PublicKeyCurve25519X public key for path P.
 
 Extra Notes:
 
-* ED25519 public keys are compressed into a Y point in little endian encoding having the MSB bit encode the parity of X (since each Y coordinate has two possible X values, X and -X in a prime field F which means if one is even the second is odd)
+* ED25519 public keys are compressed into a Y point in little endian encoding having the MSB bit encode the parity of X (since each Y coordinate has two possible X values, X and -X in field F which means if one is even the second is odd)
 
-* In order to derive public keys outside of the ledger (Master public key derivation), all we need is the ed25519 public key and chaincode, described in the derivation scheme.
+* In order to derive public keys outside of the ledger (Master key derivation), all we need is the ed25519 public key and chaincode, described in the derivation scheme.
 
 * Reference code for the derivation implementation can found in the [Ardor source code](https://bitbucket.org/Jelurida/ardor/src/master/)
-
-* [This repo](https://github.com/LedgerHQ/orakolo) implements SLIP10 master seed generation and BIP32 HD EdDSA key derivation in python for reference, [this clone](https://github.com/haimbender/orakolo) also implements master public key derivation for BIP32 EdDSA
-
-* Curve25519 and ED25519 curves don't really look like curves, they are just a cloud of points

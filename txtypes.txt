@@ -1,60 +1,60 @@
--4,0,Issue Exchange Order
--4,1,Cancel Exchange Order
--3,0,Lease Forging Balance
--2,0,Make Payment
+-4,0,Parent Coin Exchange Order Issue
+-4,1,Parent Coin Exchange Order Cancel
+-3,0,Effective Balance Leasing
+-2,0,Parent Payment
 -1,0,Child Chain Block
-0,0,Make Payment
-1,0,Send Message
-2,0,Issue Asset
-2,1,Transfer Asset
-2,2,Place Ask Order
-2,3,Place Bid Order
-2,4,Cancel Ask Order
-2,5,Cancel Bid Order
-2,6,Pay Dividends
-2,7,Delete Asset Shares
-2,8,Increase Asset Shares
-2,9,Set Asset Control
-2,10,Set Asset Property
-2,11,Delete Asset Property
-3,0,Marketplace Listing
-3,1,Marketplace Delisting
-3,2,Marketplace Price Change
-3,3,Marketplace Quantity Change
-3,4,Marketplace Purchase
-3,5,Marketplace Delivery
-3,6,Marketplace Feedback
-3,7,Marketplace Refund
+0,0,Ordinary Payment
+1,0,Arbitrary Message
+2,0,Asset Issuance
+2,1,Asset Transfer
+2,2,Ask Order Placement
+2,3,Bid Order Placement
+2,4,Ask Order Cancellation
+2,5,Bid Order Cancellation
+2,6,Dividend Payment
+2,7,Asset Delete
+2,8,Asset Increase
+2,9,Set Phasing Asset Control
+2,10,Asset Property
+2,11,Asset Property Delete
+3,0,Digital Goods Listing
+3,1,Digital Goods Delisting
+3,2,Digital Goods Price Change
+3,3,Digital Goods Quantity Change
+3,4,Digital Goods Purchase
+3,5,Digital Goods Delivery
+3,6,Digital Goods Feedback
+3,7,Digital Goods Refund
 4,0,Set Phasing Only
-5,0,Issue Currency
-5,1,Increase Currency Reserve
-5,2,Claim Currency Reserve
-5,3,Transfer Currency
-5,4,Publish Currency Exchange Offer
-5,5,Buy Currency
-5,6,Sell Currency
-5,7,Mint Currency
-5,8,Delete Currency
-6,0,Data Cloud Upload
-7,0,Create Shuffling
+5,0,Currency Issuance
+5,1,Reserve Increase
+5,2,Reserve Claim
+5,3,Currency Transfer
+5,4,Publish Exchange Offer
+5,5,Exchange Buy
+5,6,Exchange Sell
+5,7,Currency Minting
+5,8,Currency Deletion
+6,0,Tagged Data Upload
+7,0,Shuffling Creation
 7,1,Shuffling Registration
 7,2,Shuffling Processing
 7,3,Shuffling Recipients
 7,4,Shuffling Verification
-7,5,Cancel Shuffling
-8,0,Set Alias
-8,1,Sell Alias
-8,2,Buy Alias
-8,3,Delete Alias
-9,0,Create Poll
-9,1,Cast Vote
-9,2,Cast Phasing Vote
-10,0,Set Account Info
-10,1,Set Account Property
-10,2,Delete Account Property
-11,0,Issue Exchange Order
-11,1,Cancel Exchange Order
-12,0,Set Contract Reference
-12,1,Delete Contract Reference
-13,0,Add Chain Permission
-13,1,Remove Chain Permission
+7,5,Shuffling Cancellation
+8,0,Alias Assignment
+8,1,Alias Sell
+8,2,Alias Buy
+8,3,Alias Delete
+9,0,Poll Creation
+9,1,Vote Casting
+9,2,Phasing Vote Casting
+10,0,Account Info
+10,1,Account Property
+10,2,Account Property Delete
+11,0,Coin Exchange Order Issue
+11,1,Coin Exchange Order Cancel
+12,0,Contract Reference
+12,1,Contract Reference Delete
+13,0,Add Permission
+13,1,Remove Permission
